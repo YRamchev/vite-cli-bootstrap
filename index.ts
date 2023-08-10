@@ -107,7 +107,8 @@ async function init() {
       argv.cypress ??
       argv.nightwatch ??
       argv.playwright ??
-      argv.eslint
+      argv.eslint ??
+      argv.storybook
     ) === 'boolean'
 
   let targetDir = argv._[0]
@@ -127,6 +128,7 @@ async function init() {
     needsE2eTesting?: false | 'cypress' | 'nightwatch' | 'playwright'
     needsEslint?: boolean
     needsPrettier?: boolean
+    needsStorybook?: boolean
   } = {}
 
   try {
@@ -265,6 +267,14 @@ async function init() {
           initial: false,
           active: 'Yes',
           inactive: 'No'
+        },
+        {
+          name: 'needsStorybook',
+          type: () => (isFeatureFlagsUsed ? null : 'toggle'),
+          message: 'Add Storybook?',
+          initial: false,
+          active: 'Yes',
+          inactive: 'No'
         }
       ],
       {
@@ -290,7 +300,8 @@ async function init() {
     needsPinia = argv.pinia,
     needsVitest = argv.vitest || argv.tests,
     needsEslint = argv.eslint || argv['eslint-with-prettier'],
-    needsPrettier = argv['eslint-with-prettier']
+    needsPrettier = argv['eslint-with-prettier'],
+    needsStorybook = argv.storybook
   } = result
 
   const { needsE2eTesting } = result
@@ -492,7 +503,8 @@ async function init() {
       needsPlaywright,
       needsNightwatchCT,
       needsCypressCT,
-      needsEslint
+      needsEslint,
+      needsStorybook
     })
   )
 
@@ -506,6 +518,9 @@ async function init() {
   console.log(`  ${bold(green(getCommand(packageManager, 'install')))}`)
   if (needsPrettier) {
     console.log(`  ${bold(green(getCommand(packageManager, 'format')))}`)
+  }
+  if (needsStorybook) {
+    console.log(`  ${bold(green('npx storybook@latest init --builder vite'))}`)
   }
   console.log(`  ${bold(green(getCommand(packageManager, 'dev')))}`)
   console.log()
