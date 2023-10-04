@@ -5,18 +5,18 @@ import * as path from 'node:path'
 
 import minimist from 'minimist'
 import prompts from 'prompts'
-import { red, green, bold } from 'kolorist'
+import { red, green, bold, yellow } from 'kolorist'
 
 import ejs from 'ejs'
 
-import * as banners from './utils/banners'
+import * as banners from './utils/banners.js'
 
-import renderTemplate from './utils/renderTemplate'
-import { postOrderDirectoryTraverse, preOrderDirectoryTraverse } from './utils/directoryTraverse'
-import generateReadme from './utils/generateReadme'
-import getCommand from './utils/getCommand'
-import renderEslint from './utils/renderEslint'
-import { FILES_TO_FILTER } from './utils/filterList'
+import renderTemplate from './utils/renderTemplate.js'
+import { postOrderDirectoryTraverse, preOrderDirectoryTraverse } from './utils/directoryTraverse.js'
+import generateReadme from './utils/generateReadme.js'
+import getCommand from './utils/getCommand.js'
+import renderEslint from './utils/renderEslint.js'
+import { FILES_TO_FILTER } from './utils/filterList.js'
 
 function isValidPackageName(projectName) {
   return /^(?:@[a-z0-9-*~][a-z0-9-*._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/.test(projectName)
@@ -104,10 +104,13 @@ async function init() {
       argv.pinia ??
       argv.tests ??
       argv.vitest ??
+      argv.sonarQube ??
       argv.cypress ??
       argv.nightwatch ??
       argv.playwright ??
-      argv.eslint
+      argv.eslint ??
+      argv.storybook ??
+      argv.vueUse
     ) === 'boolean'
 
   let targetDir = argv._[0]
@@ -124,9 +127,12 @@ async function init() {
     needsRouter?: boolean
     needsPinia?: boolean
     needsVitest?: boolean
+    needsSonarQube?: boolean
     needsE2eTesting?: false | 'cypress' | 'nightwatch' | 'playwright'
     needsEslint?: boolean
     needsPrettier?: boolean
+    needsVueUse?: boolean
+    needsStorybook?: boolean
   } = {}
 
   try {
@@ -143,6 +149,8 @@ async function init() {
     // - Add Playwright for end-to-end testing?
     // - Add ESLint for code quality?
     // - Add Prettier for code formatting?
+    // - Add VueUse - Collection of essential Composition Utilities?
+    // - Add Storybook?
     result = await prompts(
       [
         {
@@ -219,6 +227,19 @@ async function init() {
           inactive: 'No'
         },
         {
+          name: 'needsSonarQube',
+          type: (prev, values) => {
+            if (isFeatureFlagsUsed || !values.needsVitest) {
+              return null
+            }
+            return 'toggle'
+          },
+          message: 'Add SonarQube for code coverage?',
+          initial: false,
+          active: 'Yes',
+          inactive: 'No'
+        },
+        {
           name: 'needsE2eTesting',
           type: () => (isFeatureFlagsUsed ? null : 'select'),
           message: 'Add an End-to-End Testing Solution?',
@@ -265,6 +286,22 @@ async function init() {
           initial: false,
           active: 'Yes',
           inactive: 'No'
+        },
+        {
+          name: 'needsVueUse',
+          type: () => (isFeatureFlagsUsed ? null : 'toggle'),
+          message: 'Add VueUse - Collection of essential Composition Utilities?',
+          initial: false,
+          active: 'Yes',
+          inactive: 'No'
+        },
+        {
+          name: 'needsStorybook',
+          type: () => (isFeatureFlagsUsed ? null : 'toggle'),
+          message: 'Add Storybook?',
+          initial: false,
+          active: 'Yes',
+          inactive: 'No'
         }
       ],
       {
@@ -289,8 +326,11 @@ async function init() {
     needsRouter = argv.router,
     needsPinia = argv.pinia,
     needsVitest = argv.vitest || argv.tests,
+    needsSonarQube = argv.SneedsSonarQube,
     needsEslint = argv.eslint || argv['eslint-with-prettier'],
-    needsPrettier = argv['eslint-with-prettier']
+    needsPrettier = argv['eslint-with-prettier'],
+    needsVueUse = argv.vueUse,
+    needsStorybook = argv.storybook
   } = result
 
   const { needsE2eTesting } = result
@@ -339,6 +379,9 @@ async function init() {
   if (needsVitest) {
     render('config/vitest')
   }
+  if (needsSonarQube) {
+    render('config/sonarQube')
+  }
   if (needsCypress) {
     render('config/cypress')
   }
@@ -382,6 +425,10 @@ async function init() {
   // Render ESLint config
   if (needsEslint) {
     renderEslint(root, { needsTypeScript, needsCypress, needsCypressCT, needsPrettier })
+  }
+
+  if (needsVueUse) {
+    render('config/vueUse')
   }
 
   // Render code template.
@@ -506,6 +553,12 @@ async function init() {
   console.log(`  ${bold(green(getCommand(packageManager, 'install')))}`)
   if (needsPrettier) {
     console.log(`  ${bold(green(getCommand(packageManager, 'format')))}`)
+  }
+  if (needsStorybook) {
+    console.log(`  ${bold(green('npx storybook@latest init --builder vite'))}`)
+  }
+  if (needsSonarQube) {
+    console.log(`  ${bold(yellow('Do not forget to update sonar-project.properties'))}`)
   }
   console.log(`  ${bold(green(getCommand(packageManager, 'dev')))}`)
   console.log()
