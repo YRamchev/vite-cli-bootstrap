@@ -16,11 +16,15 @@
   "scripts": {
     "prepare": "husky install",
     "format": "prettier --write .",
-    "build": "zx ./scripts/build.mjs"
+    "build": "zx ./scripts/build.mjs",
+    "snapshot": "zx ./scripts/snapshot.mjs",
+    "pretest": "run-s build snapshot",
+    "test": "zx ./scripts/test.mjs",
+    "prepublishOnly": "zx ./scripts/prepublish.mjs"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vuejs/create-vue.git"
+    "url": "git+https://github.com/YRamchev/vue-bootstrap.git"
   },
   "keywords": [],
   "author": "Haoqun Jiang <haoqunjiang+npm@gmail.com>",
